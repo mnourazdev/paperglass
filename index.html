@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Paperglass — Turn paper into clean scans</title>
+  <meta name="description" content="Photograph invoices, receipts and payment slips. Paperglass straightens the page, removes shadows and exports tidy images or a single PDF. Everything stays on your device." />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#f3f1ec" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Paperglass" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230f7a6c'/%3E%3Cpath d='M10 7h8l4 4v14H10z' fill='none' stroke='%23fff' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M18 7v4h4M13.5 17h5M13.5 21h3.5' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('paperglass.theme');
+        var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.dataset.theme = saved || (systemDark ? 'dark' : 'light');
+
+        var lang = localStorage.getItem('paperglass.lang');
+        if (lang !== 'ar' && lang !== 'en') {
+          lang = (navigator.language || '').toLowerCase().indexOf('ar') === 0 ? 'ar' : 'en';
+        }
+        document.documentElement.lang = lang;
+        document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+        if (lang === 'ar') {
+          document.title = 'Paperglass — حوّل الورق إلى مسوحات نظيفة';
+        }
+      } catch (error) {
+        document.documentElement.dataset.theme = 'light';
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <svg class="icon-sprite" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15.5V4"/><path d="m7.4 8.6 4.6-4.6 4.6 4.6"/><path d="M4.5 14v4A2.5 2.5 0 0 0 7 20.5h10a2.5 2.5 0 0 0 2.5-2.5v-4"/></symbol>
+      <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4.5 7.5h2.7l1.3-2h7l1.3 2h2.7A1.5 1.5 0 0 1 21 9v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18V9a1.5 1.5 0 0 1 1.5-1.5Z"/><circle cx="12" cy="13.3" r="3.6"/></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.1"/><path d="M12 2.5v2M12 19.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.5 12h2M19.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.4 14.6A8.7 8.7 0 0 1 9.4 3.6a8.7 8.7 0 1 0 11 11Z"/></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3.5v11"/><path d="m7.5 10 4.5 4.5 4.5-4.5"/><path d="M4.5 16.5v2a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-2"/></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 6.5h16"/><path d="M9 6.5V4.8A1.3 1.3 0 0 1 10.3 3.5h3.4A1.3 1.3 0 0 1 15 4.8v1.7"/><path d="m6 6.5 1 12.2a2 2 0 0 0 2 1.8h6a2 2 0 0 0 2-1.8l1-12.2"/><path d="M10 10.5v6M14 10.5v6"/></symbol>
+      <symbol id="i-rotate-left" viewBox="0 0 24 24"><path d="M4.5 9.5A8 8 0 1 1 4 14"/><path d="M4.5 4.5v5h5"/></symbol>
+      <symbol id="i-rotate-right" viewBox="0 0 24 24"><path d="M19.5 9.5A8 8 0 1 0 20 14"/><path d="M19.5 4.5v5h-5"/></symbol>
+      <symbol id="i-crop" viewBox="0 0 24 24"><path d="M6.5 3v13.5a1.5 1.5 0 0 0 1.5 1.5H21.5"/><path d="M2.5 6.5H16a1.5 1.5 0 0 1 1.5 1.5v13.5"/></symbol>
+      <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="m11 3.5 1.9 4.6 4.6 1.9-4.6 1.9L11 16.5 9.1 11.9 4.5 10l4.6-1.9L11 3.5Z"/><path d="m18.5 15 .9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1Z"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="m4.5 12.5 5 5 10-11"/></symbol>
+      <symbol id="i-image" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.4"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.7-4.5a2 2 0 0 1 2.7 0l2.4 2.3c.5.5 1.2.5 1.7 0l1.5-1.4a2 2 0 0 1 2.7 0l1.8 1.7"/></symbol>
+      <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3.5h7.5L19 9v11.5H6z"/><path d="M13.5 3.5V9H19"/><path d="M9.3 13h6.4M9.3 16.5h4.4"/></symbol>
+      <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7.5h5M13 7.5h7M4 16.5h7M15 16.5h5"/><circle cx="11" cy="7.5" r="2.1"/><circle cx="13" cy="16.5" r="2.1"/></symbol>
+      <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="7" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="7" r="1.2" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="9" cy="17" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="17" r="1.2" fill="currentColor" stroke="none"/></symbol>
+      <symbol id="i-more" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="18" cy="12" r="1.4" fill="currentColor" stroke="none"/></symbol>
+      <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="M12 19V5m0 0-6 6m6-6 6 6"/></symbol>
+      <symbol id="i-arrow-down" viewBox="0 0 24 24"><path d="M12 5v14m0 0 6-6m-6 6-6-6"/></symbol>
+      <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M4.5 12h15m0 0-5.5-5.5M19.5 12 14 17.5"/></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.4"/><path d="M8.3 10.5V8a3.7 3.7 0 0 1 7.4 0v2.5"/><path d="M12 14.5v2.2"/></symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.1 6.2"/><path d="M20 4.5V11h-6.5"/></symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.8 21 20H3L12 3.8Z"/><path d="M12 9.5v4.3M12 17.2v.2"/></symbol>
+      <symbol id="i-undo" viewBox="0 0 24 24"><path d="M8.5 6 4 10.5 8.5 15"/><path d="M4 10.5h9.5a6 6 0 0 1 0 12H9"/></symbol>
+      <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+      <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+      <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.7 9.5h16.6M3.7 14.5h16.6"/><path d="M12 3.5c2.4 2.4 3.6 5.3 3.6 8.5s-1.2 6.1-3.6 8.5c-2.4-2.4-3.6-5.3-3.6-8.5S9.6 5.9 12 3.5Z"/></symbol>
+    </defs>
+  </svg>
+
+  <div class="app" id="app">
+    <header class="topbar">
+      <a class="brand" href="./" data-i18n-aria="a11y.home">
+        <span class="brand-mark">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3.5h7L18.5 8.5V20.5h-12z"/><path d="M13.5 3.5v5h5"/><path d="M9.5 12.5h5.5M9.5 16h3.8"/></svg>
+        </span>
+        <span class="brand-name">Paperglass</span>
+      </a>
+
+      <div class="topbar-center" id="topbarMeta">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="docMeta" data-i18n="topbar.ready">Ready when you are</span>
+      </div>
+
+      <div class="topbar-actions">
+        <button class="lang-btn" id="langToggle" type="button">
+          <svg class="icon" aria-hidden="true"><use href="#i-globe"/></svg>
+          <span id="langLabel">العربية</span>
+        </button>
+        <button class="icon-btn" id="themeToggle" type="button" aria-label="Switch colour theme" title="Toggle light / dark (T)">
+          <svg class="icon icon-sun" aria-hidden="true"><use href="#i-sun"/></svg>
+          <svg class="icon icon-moon" aria-hidden="true"><use href="#i-moon"/></svg>
+        </button>
+        <button class="btn btn-ghost hide-mobile" id="headerAdd" type="button">
+          <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>
+          <span data-i18n="actions.addPhotos">Add photos</span>
+        </button>
+        <button class="btn btn-primary" id="exportBtn" type="button" disabled>
+          <span data-i18n="actions.export">Export</span>
+          <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="workspace" id="workspace">
+      <aside class="sidebar" id="sidebar" data-i18n-aria="a11y.scannedPages">
+        <div class="panel-head">
+          <div>
+            <h2 data-i18n="pages.title">Pages</h2>
+            <p id="pageCount" data-i18n="pages.none">No pages yet</p>
+          </div>
+          <button class="icon-btn small" id="sidebarAdd" type="button" data-i18n-aria="a11y.addPhotos" data-i18n-title="a11y.addPhotosShortcut">
+            <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>
+          </button>
+        </div>
+        <div class="page-list" id="pageList"></div>
+        <div class="sidebar-foot">
+          <span class="save-state" id="saveState">
+            <svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg>
+            <span id="saveStateText" data-i18n="save.saved">Saved on this device</span>
+          </span>
+          <button class="text-btn text-danger" id="clearAll" type="button" data-i18n="panel.clearAll">Clear all</button>
+        </div>
+      </aside>
+
+      <section class="stage" id="stage">
+        <div class="empty" id="emptyState">
+          <div class="hero">
+            <span class="eyebrow"><span class="eyebrow-dot"></span> <span data-i18n="hero.eyebrow">Private by design · on-device</span></span>
+            <h1 data-i18n-html="hero.title">Paper in.<br /><em>Scans out.</em></h1>
+            <p class="hero-sub" data-i18n="hero.sub">Photograph an invoice, receipt, or payment slip. Paperglass finds the page, squares it up, and wipes away shadows — ready to export as images or one tidy PDF.</p>
+          </div>
+
+          <div class="dropzone" id="dropzone" role="button" tabindex="0" data-i18n-aria="a11y.upload">
+            <div class="drop-graphic" aria-hidden="true">
+              <span class="mini-sheet sheet-back"></span>
+              <span class="mini-sheet sheet-mid"></span>
+              <span class="mini-sheet sheet-front">
+                <span class="sheet-line w-70"></span>
+                <span class="sheet-line w-90"></span>
+                <span class="sheet-line w-55"></span>
+                <span class="sheet-line w-80"></span>
+                <span class="scan-beam"></span>
+              </span>
+            </div>
+            <div class="drop-copy">
+              <strong data-i18n="drop.title">Drop your photos here</strong>
+              <span data-i18n="drop.sub">or click to browse · JPG, PNG, WebP</span>
+            </div>
+            <div class="drop-actions">
+              <button class="btn btn-primary" id="choosePhotos" type="button">
+                <svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg>
+                <span data-i18n="drop.choose">Choose photos</span>
+              </button>
+              <button class="btn btn-soft" id="openCamera" type="button">
+                <svg class="icon" aria-hidden="true"><use href="#i-camera"/></svg>
+                <span data-i18n="drop.camera">Take photo</span>
+              </button>
+            </div>
+          </div>
+
+          <ul class="feature-row" data-i18n-aria="a11y.features">
+            <li><svg class="icon" aria-hidden="true"><use href="#i-crop"/></svg><span data-i18n="feature.edges">Auto edge detection</span></li>
+            <li><svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg><span data-i18n="feature.shadow">Shadow cleanup</span></li>
+            <li><svg class="icon" aria-hidden="true"><use href="#i-file"/></svg><span data-i18n="feature.pdf">One tidy PDF</span></li>
+            <li><svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg><span data-i18n="feature.private">Nothing uploaded</span></li>
+          </ul>
+          <p class="privacy-note"><svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg><span data-i18n="privacy.note">Your photos never leave this browser. Work is autosaved on this device only.</span></p>
+        </div>
+
+        <div class="editor" id="editor" hidden>
+          <div class="editor-bar">
+            <div class="editor-file">
+              <span class="file-index" id="fileIndex">01</span>
+              <span class="file-meta">
+                <strong id="fileName">IMG_0241.jpg</strong>
+                <span id="fileDims">0 × 0 px</span>
+              </span>
+            </div>
+            <div class="editor-tools">
+              <button class="icon-btn" id="rotateLeft" type="button" data-i18n-aria="a11y.rotateLeft" data-i18n-title="a11y.rotateLeft">
+                <svg class="icon" aria-hidden="true"><use href="#i-rotate-left"/></svg>
+              </button>
+              <button class="icon-btn" id="rotateRight" type="button" data-i18n-aria="a11y.rotateRight" data-i18n-title="a11y.rotateRight">
+                <svg class="icon" aria-hidden="true"><use href="#i-rotate-right"/></svg>
+              </button>
+              <span class="tool-sep" aria-hidden="true"></span>
+              <button class="tool-btn" id="cropBtn" type="button" aria-pressed="false">
+                <svg class="icon" aria-hidden="true"><use href="#i-crop"/></svg>
+                <span class="crop-label" data-i18n="editor.adjustEdges">Adjust edges</span>
+              </button>
+              <button class="tool-btn only-mobile" id="openInspector" type="button">
+                <svg class="icon" aria-hidden="true"><use href="#i-sliders"/></svg>
+                <span data-i18n="editor.enhance">Enhance</span>
+              </button>
+              <span class="tool-sep" aria-hidden="true"></span>
+              <button class="icon-btn" id="quickDownload" type="button" data-i18n-aria="a11y.downloadPage" data-i18n-title="a11y.downloadPage">
+                <svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="canvas-area" id="canvasArea">
+            <div class="canvas-slot" id="canvasSlot">
+              <div class="paper-holder" id="paperHolder">
+                <canvas id="previewCanvas" data-i18n-aria="a11y.preview"></canvas>
+                <svg class="crop-svg" id="cropSvg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                  <path id="cropDim" fill="rgba(8, 14, 12, 0.52)" fill-rule="evenodd" d="" />
+                  <polygon id="cropPoly" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="7 5" vector-effect="non-scaling-stroke" />
+                </svg>
+                <div class="crop-handles" id="cropHandles" aria-hidden="true">
+                  <button class="crop-handle" data-corner="0" type="button" data-i18n-aria="a11y.cornerTL"></button>
+                  <button class="crop-handle" data-corner="1" type="button" data-i18n-aria="a11y.cornerTR"></button>
+                  <button class="crop-handle" data-corner="2" type="button" data-i18n-aria="a11y.cornerBR"></button>
+                  <button class="crop-handle" data-corner="3" type="button" data-i18n-aria="a11y.cornerBL"></button>
+                </div>
+                <div class="render-veil" id="renderVeil" hidden>
+                  <span class="spinner"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="editor-foot">
+            <span class="stage-hint" id="stageHint" data-i18n="editor.tipEmpty">Tip: drag the corners to fine-tune the crop.</span>
+            <div class="crop-actions" id="cropActions" hidden>
+              <button class="text-btn" id="autoCrop" type="button">
+                <svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg>
+                <span data-i18n="crop.auto">Auto-detect</span>
+              </button>
+              <button class="text-btn" id="resetCrop" type="button">
+                <svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg>
+                <span data-i18n="crop.reset">Reset</span>
+              </button>
+              <button class="btn btn-primary btn-small" id="doneCrop" type="button">
+                <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>
+                <span data-i18n="crop.done">Done</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="inspector" id="inspector" data-i18n-aria="a11y.enhancePanel">
+        <div class="panel-head">
+          <div>
+            <h2 data-i18n="inspector.title">Enhance</h2>
+            <p data-i18n="inspector.sub">Scanner-quality in one tap</p>
+          </div>
+          <div class="head-actions">
+            <button class="icon-btn small" id="resetAdjustments" type="button" data-i18n-aria="a11y.resetAdjustments" data-i18n-title="a11y.resetAdjustments">
+              <svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg>
+            </button>
+            <button class="icon-btn small only-mobile" id="closeInspector" type="button" data-i18n-aria="a11y.closeEnhance">
+              <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="inspector-scroll">
+          <section class="field-group">
+            <span class="group-label" data-i18n="inspector.look">Look</span>
+            <div class="preset-grid" id="presetGrid" role="group" data-i18n-aria="a11y.look">
+              <button class="preset is-active" data-mode="clean" type="button">
+                <span class="preset-swatch swatch-clean" aria-hidden="true"></span>
+                <span class="preset-name" data-i18n="preset.clean.name">Clean</span>
+                <span class="preset-note" data-i18n="preset.clean.note">Crisp scan</span>
+                <svg class="preset-check icon" aria-hidden="true"><use href="#i-check"/></svg>
+              </button>
+              <button class="preset" data-mode="ink" type="button">
+                <span class="preset-swatch swatch-ink" aria-hidden="true"></span>
+                <span class="preset-name" data-i18n="preset.ink.name">Ink</span>
+                <span class="preset-note" data-i18n="preset.ink.note">Pure black</span>
+                <svg class="preset-check icon" aria-hidden="true"><use href="#i-check"/></svg>
+              </button>
+              <button class="preset" data-mode="color" type="button">
+                <span class="preset-swatch swatch-color" aria-hidden="true"></span>
+                <span class="preset-name" data-i18n="preset.color.name">Colour</span>
+                <span class="preset-note" data-i18n="preset.color.note">Keeps ink</span>
+                <svg class="preset-check icon" aria-hidden="true"><use href="#i-check"/></svg>
+              </button>
+              <button class="preset" data-mode="original" type="button">
+                <span class="preset-swatch swatch-original" aria-hidden="true"></span>
+                <span class="preset-name" data-i18n="preset.original.name">Original</span>
+                <span class="preset-note" data-i18n="preset.original.note">No cleanup</span>
+                <svg class="preset-check icon" aria-hidden="true"><use href="#i-check"/></svg>
+              </button>
+            </div>
+          </section>
+
+          <section class="field-group">
+            <div class="field-head">
+              <label class="group-label" for="brightness" data-i18n="adjust.brightness">Brightness</label>
+              <output class="value-pill" id="brightnessOut" for="brightness">0</output>
+            </div>
+            <input class="range" id="brightness" type="range" min="-50" max="50" step="1" value="0" />
+          </section>
+
+          <section class="field-group">
+            <div class="field-head">
+              <label class="group-label" for="contrast" data-i18n="adjust.contrast">Contrast</label>
+              <output class="value-pill" id="contrastOut" for="contrast">10</output>
+            </div>
+            <input class="range" id="contrast" type="range" min="-50" max="50" step="1" value="10" />
+          </section>
+
+          <section class="field-group">
+            <div class="field-head">
+              <label class="group-label" for="cleanup" data-i18n="adjust.cleanup">Shadow cleanup</label>
+              <output class="value-pill" id="cleanupOut" for="cleanup">60</output>
+            </div>
+            <input class="range" id="cleanup" type="range" min="0" max="100" step="1" value="60" />
+            <p class="field-hint" data-i18n="adjust.cleanupHint">Flattens lighting and paper tone so the page reads cleanly.</p>
+          </section>
+
+          <div class="info-card">
+            <span class="info-icon"><svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg></span>
+            <p data-i18n-html="inspector.info"><strong>Auto-cropped on import.</strong> Edges and shadows are corrected locally — no upload, no account.</p>
+          </div>
+
+          <section class="field-group">
+            <span class="group-label" data-i18n="inspector.thisPage">This page</span>
+            <div class="action-row">
+              <button class="btn btn-soft btn-small" id="moveUpBtn" type="button">
+                <svg class="icon" aria-hidden="true"><use href="#i-arrow-up"/></svg>
+                <span data-i18n="page.moveUp">Move up</span>
+              </button>
+              <button class="btn btn-soft btn-small" id="moveDownBtn" type="button">
+                <svg class="icon" aria-hidden="true"><use href="#i-arrow-down"/></svg>
+                <span data-i18n="page.moveDown">Move down</span>
+              </button>
+              <button class="icon-btn page-action-danger" id="deletePageBtn" type="button" data-i18n-aria="a11y.deletePage" data-i18n-title="a11y.deletePage">
+                <svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg>
+              </button>
+            </div>
+          </section>
+        </div>
+
+        <div class="inspector-foot">
+          <button class="btn btn-soft btn-full" id="applyAll" type="button">
+            <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>
+            <span data-i18n="inspector.applyAll">Apply look to all pages</span>
+          </button>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div class="drop-overlay" id="dropOverlay" hidden>
+    <div class="drop-overlay-card">
+      <span class="drop-overlay-icon"><svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg></span>
+      <strong data-i18n="dropOverlay.title">Drop photos to scan</strong>
+      <span data-i18n="dropOverlay.sub">We’ll straighten and clean each page automatically.</span>
+    </div>
+  </div>
+
+  <div class="inspector-scrim" id="inspectorScrim" hidden></div>
+
+  <input type="file" id="fileInput" accept="image/*" multiple hidden />
+  <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden />
+
+  <!-- Export -->
+  <div class="modal" id="exportModal" hidden>
+    <div class="modal-backdrop" data-close="export"></div>
+    <div class="modal-card export-card" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
+      <header class="modal-head">
+        <div>
+          <h3 id="exportTitle" data-i18n="export.title">Export your scan</h3>
+          <p id="exportSubtitle">1 page, ready to go.</p>
+        </div>
+        <button class="icon-btn" type="button" data-close="export" data-i18n-aria="a11y.closeExport">
+          <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+        </button>
+      </header>
+
+      <div class="modal-body">
+        <div class="segmented" id="exportFormat" role="tablist" data-i18n-aria="a11y.exportFormat">
+          <button class="is-active" type="button" data-format="pdf" role="tab" aria-selected="true">
+            <svg class="icon" aria-hidden="true"><use href="#i-file"/></svg>
+            <span data-i18n="export.pdf">PDF document</span>
+          </button>
+          <button type="button" data-format="images" role="tab" aria-selected="false">
+            <svg class="icon" aria-hidden="true"><use href="#i-image"/></svg>
+            <span data-i18n="export.images">Images</span>
+          </button>
+        </div>
+
+        <div class="export-panel" id="pdfOptions">
+          <div class="form-row">
+            <div class="field">
+              <span class="group-label" data-i18n="export.paperSize">Paper size</span>
+              <div class="segmented segmented-small" id="paperSize" role="group" data-i18n-aria="a11y.paperSize">
+                <button class="is-active" type="button" data-size="a4">A4</button>
+                <button type="button" data-size="letter">Letter</button>
+              </div>
+            </div>
+            <div class="field">
+              <label class="group-label" for="pdfQuality" data-i18n="export.imageQuality">Image quality</label>
+              <div class="select-wrap">
+                <select id="pdfQuality">
+                  <option value="high" data-i18n="export.qHighPrint">High — for printing</option>
+                  <option value="balanced" selected data-i18n="export.qBalancedPrint">Balanced — recommended</option>
+                  <option value="compact" data-i18n="export.qCompactPrint">Compact — smaller file</option>
+                </select>
+                <svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label class="group-label" for="exportName" data-i18n="export.fileName">File name</label>
+            <div class="input-affix">
+              <input id="exportName" type="text" spellcheck="false" autocomplete="off" value="paperglass-scan" />
+              <span>.pdf</span>
+            </div>
+          </div>
+          <div class="export-summary" id="pdfSummary">
+            <span><svg class="icon" aria-hidden="true"><use href="#i-file"/></svg><span id="pdfSummaryText">1 PDF · 1 page · A4</span></span>
+            <span class="summary-note" data-i18n="export.pdfNote">One document, pages in order</span>
+          </div>
+        </div>
+
+        <div class="export-panel" id="imageOptions" hidden>
+          <div class="form-row">
+            <div class="field">
+              <span class="group-label" data-i18n="export.format">Format</span>
+              <div class="segmented segmented-small" id="imageFormat" role="group" data-i18n-aria="a11y.imageFormat">
+                <button class="is-active" type="button" data-image="jpeg">JPG</button>
+                <button type="button" data-image="png">PNG</button>
+              </div>
+            </div>
+            <div class="field">
+              <label class="group-label" for="imageQuality" data-i18n="export.imageQuality">Image quality</label>
+              <div class="select-wrap">
+                <select id="imageQuality">
+                  <option value="high" data-i18n="export.qHigh">High</option>
+                  <option value="balanced" selected data-i18n="export.qBalanced">Balanced</option>
+                  <option value="compact" data-i18n="export.qCompact">Compact</option>
+                </select>
+                <svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label class="group-label" for="imageName" data-i18n="export.fileName">File name</label>
+            <div class="input-affix">
+              <input id="imageName" type="text" spellcheck="false" autocomplete="off" value="paperglass-scan" />
+              <span id="imageExt">.jpg</span>
+            </div>
+          </div>
+          <div class="export-summary" id="imageSummary">
+            <span><svg class="icon" aria-hidden="true"><use href="#i-image"/></svg><span id="imageSummaryText">1 JPG image</span></span>
+            <span class="summary-note" id="imageSummaryNote">Delivered as a ZIP</span>
+          </div>
+        </div>
+      </div>
+
+      <footer class="modal-foot">
+        <button class="btn btn-ghost" type="button" data-close="export" data-i18n="actions.cancel">Cancel</button>
+        <button class="btn btn-primary" id="exportConfirm" type="button">
+          <svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>
+          <span data-i18n="actions.download">Download</span>
+        </button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Confirm -->
+  <div class="modal" id="confirmModal" hidden>
+    <div class="modal-backdrop" data-close="confirm"></div>
+    <div class="modal-card confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle">
+      <header class="modal-head">
+        <div>
+          <h3 id="confirmTitle" data-i18n="confirm.title">Delete session?</h3>
+          <p id="confirmMessage" data-i18n="confirm.message">This removes every page from this device.</p>
+        </div>
+        <button class="icon-btn" type="button" data-close="confirm" data-i18n-aria="a11y.closeDialog">
+          <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+        </button>
+      </header>
+      <footer class="modal-foot">
+        <button class="btn btn-ghost" type="button" data-close="confirm" data-i18n="actions.cancel">Cancel</button>
+        <button class="btn btn-danger" id="confirmAction" type="button" data-i18n="actions.delete">Delete</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Camera -->
+  <div class="modal" id="cameraModal" hidden>
+    <div class="modal-backdrop" data-close="camera"></div>
+    <div class="modal-card camera-card" role="dialog" aria-modal="true" aria-labelledby="cameraTitle">
+      <header class="modal-head">
+        <div>
+          <h3 id="cameraTitle" data-i18n="camera.title">Take a photo</h3>
+          <p data-i18n="camera.sub">Fill the frame with the page and keep the light even.</p>
+        </div>
+        <button class="icon-btn" type="button" data-close="camera" data-i18n-aria="a11y.closeCamera">
+          <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+        </button>
+      </header>
+      <div class="camera-stage">
+        <video id="cameraVideo" playsinline autoplay muted></video>
+        <div class="camera-guide" aria-hidden="true"></div>
+        <p class="camera-error" id="cameraError" hidden data-i18n="camera.error">Camera unavailable. You can still choose a photo from your device.</p>
+      </div>
+      <footer class="modal-foot camera-foot">
+        <button class="btn btn-ghost" type="button" id="cameraFallback">
+          <svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg>
+          <span data-i18n="camera.chooseFile">Choose a file</span>
+        </button>
+        <button class="btn btn-primary" type="button" id="captureBtn">
+          <span class="shutter-dot" aria-hidden="true"></span>
+          <span data-i18n="camera.capture">Capture</span>
+        </button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Busy -->
+  <div class="busy" id="busy" hidden aria-live="polite" aria-busy="true">
+    <div class="busy-card">
+      <span class="spinner spinner-lg"></span>
+      <div class="busy-copy">
+        <strong id="busyTitle" data-i18n="busy.working">Working on it…</strong>
+        <span id="busyDetail" data-i18n="busy.detail">This stays on your device.</span>
+      </div>
+      <div class="progress" id="busyProgress"><span></span></div>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

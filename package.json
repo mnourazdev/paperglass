@@ -1,0 +1,11 @@
+{
+  "name": "paperglass",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Turn phone photos of paper documents into clean, scanner-style scans. Export images or a single PDF — entirely on-device.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "deploy": "node scripts/deploy.mjs"
+  }
+}
