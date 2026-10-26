@@ -15,6 +15,7 @@ const PUBLIC_FILES = [
   "index.html",
   "manifest.webmanifest",
   "sw.js",
+  "robots.txt",
   "_headers",
   "css",
   "js",
@@ -29,20 +30,9 @@ for (const entry of PUBLIC_FILES) {
 }
 
 const child = spawn(
-  "npx",
-  [
-    "--yes",
-    "wrangler",
-    "pages",
-    "deploy",
-    OUTPUT,
-    "--project-name",
-    PROJECT,
-    "--branch",
-    "main",
-    "--commit-dirty=true",
-  ],
-  { stdio: "inherit", shell: process.platform === "win32" }
+  "npx --yes wrangler pages deploy " +
+    `${OUTPUT} --project-name ${PROJECT} --branch main --commit-dirty=true`,
+  { stdio: "inherit", shell: true }
 );
 
 child.on("exit", (code) => {

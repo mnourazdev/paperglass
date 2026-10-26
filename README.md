@@ -4,6 +4,9 @@ Turn phone photos of invoices, receipts, and payment slips into clean,
 scanner-style scans. Crop, straighten, brighten, and export as images or one
 PDF — entirely in the browser.
 
+**Live app:** <https://paperglass.pages.dev>  
+**Source:** <https://github.com/mnourazdev/paperglass>
+
 ## Features
 
 - **Automatic page detection** — finds the paper edges in a photo and
@@ -51,23 +54,41 @@ Any static file server works too, for example:
 npx serve .
 ```
 
+## Deploy
+
+The live app is hosted on **Cloudflare Pages** as the `paperglass` project, and
+the source lives at <https://github.com/mnourazdev/paperglass>.
+
+To publish the current files:
+
+```bash
+npm run deploy
+```
+
+The script stages only the public assets in `.deploy/`, then uploads them with
+Wrangler. You must be logged in to the Cloudflare account first
+(`npx wrangler login`). `_headers` keeps `sw.js` uncached so service-worker
+updates are picked up promptly.
+
 ## Install on your phone
 
 Paperglass is a PWA, so the same build runs as an app on Android and iPhone.
+Open <https://paperglass.pages.dev> on the phone — it is already served over
+HTTPS, so no setup is needed.
 
-1. Open the app in the phone browser over **HTTPS** (or `localhost` on the
-   phone itself). Installation and the live camera need a secure context.
-2. **Android (Chrome):** tap **Install** when offered, or use the menu →
-   **Install app** / **Add to Home screen**.
-3. **iPhone / iPad (Safari):** tap **Share** → **Add to Home Screen**.
-4. Launch it from the home screen. It opens full-screen and, after the first
+1. **Android (Chrome):** open <https://paperglass.pages.dev> and tap
+   **Install** when the app offers it, or use the menu → **Install app** /
+   **Add to Home screen**.
+2. **iPhone / iPad (Safari):** open the link in Safari, tap **Share** →
+   **Add to Home Screen**.
+3. Launch it from the home screen. It opens full-screen and, after the first
    visit, keeps working without a connection.
 
-Photos are still processed on the device; installing uploads nothing. When
-testing from a computer on the same network, plain HTTP on a LAN address will
-not install or allow the live camera — the file picker still works. On iOS,
+Photos are still processed on the device; installing uploads nothing. On iOS,
 website data can be cleared after long periods of disuse, so export important
-scans.
+scans. To test a local build on a phone, serve this folder over HTTPS; plain
+HTTP on a LAN address will not install or allow the live camera — the file
+picker still works.
 
 ## Using it
 
@@ -109,7 +130,10 @@ js/db.js            IndexedDB session persistence
 js/i18n.js          English/Arabic strings, language persistence, RTL switching
 manifest.webmanifest  Installed-app metadata
 sw.js               Offline app-shell cache
+_headers            Cloudflare Pages headers (service-worker caching)
+robots.txt          Crawler policy for the public site
 icons/              App icons (SVG source and PNG sizes)
+scripts/deploy.mjs  Stages public files and deploys them to Cloudflare Pages
 server.js           Minimal local static server
 ```
 
