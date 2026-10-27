@@ -53,6 +53,7 @@
       <symbol id="i-x" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
       <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
       <symbol id="i-check" viewBox="0 0 24 24"><path d="m4.5 12.5 5 5 10-11"/></symbol>
+      <symbol id="i-select" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="m8 12 2.6 2.6L16 9"/></symbol>
       <symbol id="i-image" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.4"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.7-4.5a2 2 0 0 1 2.7 0l2.4 2.3c.5.5 1.2.5 1.7 0l1.5-1.4a2 2 0 0 1 2.7 0l1.8 1.7"/></symbol>
       <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3.5h7.5L19 9v11.5H6z"/><path d="M13.5 3.5V9H19"/><path d="M9.3 13h6.4M9.3 16.5h4.4"/></symbol>
       <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7.5h5M13 7.5h7M4 16.5h7M15 16.5h5"/><circle cx="11" cy="7.5" r="2.1"/><circle cx="13" cy="16.5" r="2.1"/></symbol>
@@ -73,12 +74,17 @@
 
   <div class="app" id="app">
     <header class="topbar">
-      <a class="brand" href="./" data-i18n-aria="a11y.home">
-        <span class="brand-mark">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3.5h7L18.5 8.5V20.5h-12z"/><path d="M13.5 3.5v5h5"/><path d="M9.5 12.5h5.5M9.5 16h3.8"/></svg>
-        </span>
-        <span class="brand-name">Paperglass</span>
-      </a>
+      <div class="topbar-brand">
+        <button class="icon-btn sidebar-toggle only-mobile" id="sidebarToggle" type="button" data-i18n-aria="pages.title" aria-expanded="false">
+          <svg class="icon" aria-hidden="true"><use href="#i-sliders"/></svg>
+        </button>
+        <a class="brand" href="./" data-i18n-aria="a11y.home">
+          <span class="brand-mark">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3.5h7L18.5 8.5V20.5h-12z"/><path d="M13.5 3.5v5h5"/><path d="M9.5 12.5h5.5M9.5 16h3.8"/></svg>
+          </span>
+          <span class="brand-name">Paperglass</span>
+        </a>
+      </div>
 
       <div class="topbar-center" id="topbarMeta">
         <span class="status-dot" aria-hidden="true"></span>
@@ -106,16 +112,50 @@
     </header>
 
     <main class="workspace" id="workspace">
+      <div class="sidebar-backdrop" id="sidebarBackdrop" hidden></div>
       <aside class="sidebar" id="sidebar" data-i18n-aria="a11y.scannedPages">
         <div class="panel-head">
           <div>
             <h2 data-i18n="pages.title">Pages</h2>
             <p id="pageCount" data-i18n="pages.none">No pages yet</p>
           </div>
-          <button class="icon-btn small" id="sidebarAdd" type="button" data-i18n-aria="a11y.addPhotos" data-i18n-title="a11y.addPhotosShortcut">
-            <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>
+          <div class="head-actions">
+            <button class="icon-btn small" id="sidebarAdd" type="button" data-i18n-aria="a11y.addPhotos" data-i18n-title="a11y.addPhotosShortcut">
+              <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>
+            </button>
+            <button class="icon-btn small" id="sidebarSelect" type="button" data-i18n-aria="a11y.selectPages" data-i18n-title="a11y.selectPages">
+              <svg class="icon" aria-hidden="true"><use href="#i-select"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="selection-bar" id="selectionBar" hidden>
+          <span class="selection-count" id="selectionCount" aria-live="polite"></span>
+          <button class="text-btn" id="selectAllBtn" type="button" aria-pressed="false"></button>
+          <button class="text-btn text-danger" id="deleteSelectedBtn" type="button" disabled>
+            <svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg>
+            <span data-i18n="actions.delete">Delete</span>
+          </button>
+          <button class="icon-btn small" id="cancelSelectBtn" type="button" data-i18n-aria="actions.cancel" data-i18n-title="actions.cancel">
+            <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
           </button>
         </div>
+
+        <div class="mobile-tools" id="mobileTools">
+          <button class="btn btn-soft btn-small" id="mobileAdd" type="button">
+            <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>
+            <span data-i18n="actions.addPhotos">Add photos</span>
+          </button>
+          <button class="btn btn-soft btn-small" id="mobileSelect" type="button">
+            <svg class="icon" aria-hidden="true"><use href="#i-select"/></svg>
+            <span data-i18n="actions.select">Select</span>
+          </button>
+          <button class="text-btn text-danger" id="mobileClear" type="button">
+            <svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg>
+            <span data-i18n="panel.clearAll">Clear all</span>
+          </button>
+        </div>
+
         <div class="page-list" id="pageList"></div>
         <div class="sidebar-foot">
           <span class="save-state" id="saveState">
@@ -226,6 +266,10 @@
 
           <div class="editor-foot">
             <span class="stage-hint" id="stageHint" data-i18n="editor.tipEmpty">Tip: drag the corners to fine-tune the crop.</span>
+            <button class="text-btn text-danger only-mobile" id="deleteCurrentBtn" type="button">
+              <svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg>
+              <span data-i18n="page.delete">Delete page</span>
+            </button>
             <div class="crop-actions" id="cropActions" hidden>
               <button class="text-btn" id="autoCrop" type="button">
                 <svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg>

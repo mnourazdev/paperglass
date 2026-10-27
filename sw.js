@@ -6,7 +6,7 @@
  * scripts and styles use stale-while-revalidate.
  */
 
-const CACHE_VERSION = "paperglass-v1";
+const CACHE_VERSION = "paperglass-v2";
 const SHELL = [
   "./",
   "./index.html",

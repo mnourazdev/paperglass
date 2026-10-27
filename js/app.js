@@ -157,6 +157,8 @@ const state = {
   pages: [],
   activeId: null,
   cropMode: false,
+  selectionMode: false,
+  selectedIds: new Set(),
   draggingId: null,
   dragCorner: null,
   cornerBackup: null,
@@ -239,8 +241,20 @@ async function init() {
     exportBtn: $("#exportBtn"),
     workspace: $("#workspace"),
     sidebar: $("#sidebar"),
+    sidebarToggle: $("#sidebarToggle"),
+    sidebarBackdrop: $("#sidebarBackdrop"),
     pageList: $("#pageList"),
     sidebarAdd: $("#sidebarAdd"),
+    sidebarSelect: $("#sidebarSelect"),
+    selectionBar: $("#selectionBar"),
+    selectionCount: $("#selectionCount"),
+    selectAllBtn: $("#selectAllBtn"),
+    deleteSelectedBtn: $("#deleteSelectedBtn"),
+    cancelSelectBtn: $("#cancelSelectBtn"),
+    mobileTools: $("#mobileTools"),
+    mobileAdd: $("#mobileAdd"),
+    mobileSelect: $("#mobileSelect"),
+    mobileClear: $("#mobileClear"),
     pageCount: $("#pageCount"),
     saveState: $("#saveState"),
     saveStateText: $("#saveStateText"),
@@ -287,6 +301,7 @@ async function init() {
     moveUpBtn: $("#moveUpBtn"),
     moveDownBtn: $("#moveDownBtn"),
     deletePageBtn: $("#deletePageBtn"),
+    deleteCurrentBtn: $("#deleteCurrentBtn"),
     applyAll: $("#applyAll"),
     fileInput: $("#fileInput"),
     cameraInput: $("#cameraInput"),
@@ -353,9 +368,27 @@ async function init() {
   observer.observe(refs.canvasSlot);
 }
 
-/* ------------------------------------------------------------------ */
-/* Theme                                                              */
-/* ------------------------------------------------------------------ */
+function openSidebar() {
+  if (!refs.sidebar) return;
+  refs.sidebar.classList.add("is-open");
+  refs.sidebarBackdrop?.removeAttribute("hidden");
+  refs.sidebarToggle?.setAttribute("aria-expanded", "true");
+  document.body.classList.add("sidebar-open");
+}
+
+function closeSidebar() {
+  if (!refs.sidebar) return;
+  refs.sidebar.classList.remove("is-open");
+  refs.sidebarBackdrop?.setAttribute("hidden", "");
+  refs.sidebarToggle?.setAttribute("aria-expanded", "false");
+  document.body.classList.remove("sidebar-open");
+}
+
+function toggleSidebar() {
+  if (!refs.sidebar) return;
+  if (refs.sidebar.classList.contains("is-open")) closeSidebar();
+  else openSidebar();
+}
 
 function initTheme() {
   const theme = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
@@ -406,10 +439,17 @@ function metaFor(page) {
 
 function renderAll() {
   const hasPages = state.pages.length > 0;
+  if (!hasPages) {
+    state.selectionMode = false;
+    state.selectedIds.clear();
+  }
   refs.workspace.classList.toggle("is-empty", !hasPages);
+  refs.workspace.classList.toggle("is-selecting", hasPages && state.selectionMode);
   refs.emptyState.hidden = hasPages;
   refs.editor.hidden = !hasPages;
   refs.exportBtn.disabled = !hasPages;
+  refs.mobileTools.hidden = state.selectionMode;
+  updateSelectionUI();
 
   if (!hasPages) {
     state.activeId = null;
@@ -441,16 +481,23 @@ function renderAll() {
 }
 
 function renderPageList() {
+  const selecting = state.selectionMode;
   refs.pageList.innerHTML = state.pages
     .map((page, index) => {
       const active = page.id === state.activeId;
+      const selected = selecting && state.selectedIds.has(page.id);
       return `
-        <article class="page-card${active ? " is-active" : ""}" draggable="true" data-id="${page.id}" ${
-          active ? 'aria-current="true"' : ""
-        }>
+        <article class="page-card${active ? " is-active" : ""}${
+          selected ? " is-selected" : ""
+        }" draggable="${selecting ? "false" : "true"}" data-id="${page.id}" tabindex="0" ${
+          selecting ? `role="checkbox" aria-checked="${selected}"` : ""
+        } ${active ? 'aria-current="true"' : ""}>
           <div class="thumb-wrap">
             <img src="${page.thumb || ""}" alt="" draggable="false" />
             <span class="page-index">${pad2(index + 1)}</span>
+            <span class="select-check" aria-hidden="true">
+              <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>
+            </span>
           </div>
           <div class="page-info">
             <p class="page-name" title="${escapeHtml(page.name)}">${escapeHtml(page.name)}</p>
@@ -491,8 +538,115 @@ function renderPageList() {
     })
     .join("");
 
-  const activeCard = refs.pageList.querySelector(".page-card.is-active");
-  if (activeCard) activeCard.scrollIntoView({ block: "nearest", inline: "nearest" });
+  if (!state.selectionMode) {
+    const activeCard = refs.pageList.querySelector(".page-card.is-active");
+    if (activeCard) activeCard.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }
+}
+
+function updateSelectionUI() {
+  const active = state.selectionMode && state.pages.length > 0;
+  refs.selectionBar.hidden = !active;
+  refs.mobileTools.hidden = active;
+  if (!active) return;
+
+  const count = state.selectedIds.size;
+  const total = state.pages.length;
+  const allSelected = total > 0 && count === total;
+  refs.selectionCount.textContent = count
+    ? t("selection.count", { count })
+    : t("selection.none");
+  refs.deleteSelectedBtn.disabled = count === 0;
+  refs.selectAllBtn.textContent = t(
+    allSelected ? "selection.clearAll" : "selection.selectAll"
+  );
+  refs.selectAllBtn.setAttribute("aria-pressed", String(allSelected));
+}
+
+function enterSelectionMode() {
+  if (!state.pages.length) return;
+  state.selectionMode = true;
+  state.selectedIds.clear();
+  state.cropMode = false;
+  closeCardMenus();
+  renderAll();
+}
+
+function exitSelectionMode() {
+  if (!state.selectionMode) return;
+  state.selectionMode = false;
+  state.selectedIds.clear();
+  renderAll();
+}
+
+function togglePageSelection(id) {
+  if (!state.pages.some((page) => page.id === id)) return;
+  if (state.selectedIds.has(id)) state.selectedIds.delete(id);
+  else state.selectedIds.add(id);
+
+  const card = refs.pageList.querySelector(`.page-card[data-id="${id}"]`);
+  if (card) {
+    const selected = state.selectedIds.has(id);
+    card.classList.toggle("is-selected", selected);
+    card.setAttribute("aria-checked", String(selected));
+  }
+  updateSelectionUI();
+}
+
+function toggleSelectAllPages() {
+  const allSelected =
+    state.pages.length > 0 && state.selectedIds.size === state.pages.length;
+  state.selectedIds.clear();
+  if (!allSelected) {
+    state.pages.forEach((page) => state.selectedIds.add(page.id));
+  }
+  renderPageList();
+  updateSelectionUI();
+}
+
+function deleteSelectedPages() {
+  if (!state.selectedIds.size) return;
+
+  const removed = state.pages
+    .map((page, index) => ({ page, index }))
+    .filter((item) => state.selectedIds.has(item.page.id));
+  if (!removed.length) return;
+
+  const removingActive =
+    state.activeId && state.selectedIds.has(state.activeId);
+  state.pages = state.pages.filter(
+    (page) => !state.selectedIds.has(page.id)
+  );
+  if (removingActive) {
+    state.activeId = state.pages.length ? state.pages[0].id : null;
+    state.cropMode = false;
+  }
+
+  state.selectionMode = false;
+  state.selectedIds.clear();
+  renderAll();
+  scheduleSave();
+
+  toast(t("toast.pagesRemoved", { count: removed.length }), {
+    action: t("toast.undo"),
+    duration: 6000,
+    onAction: () => {
+      removed
+        .slice()
+        .sort((a, b) => a.index - b.index)
+        .forEach((item) => {
+          state.pages.splice(
+            Math.min(item.index, state.pages.length),
+            0,
+            item.page
+          );
+        });
+      state.activeId = removed[0].page.id;
+      renderAll();
+      scheduleSave();
+      toast(t("toast.pagesRestored"));
+    },
+  });
 }
 
 function selectPage(id) {
@@ -542,6 +696,7 @@ function deletePage(id) {
   const index = state.pages.findIndex((page) => page.id === id);
   if (index < 0) return;
   const [page] = state.pages.splice(index, 1);
+  state.selectedIds.delete(id);
 
   if (state.activeId === id) {
     const next = state.pages[Math.min(index, state.pages.length - 1)];
@@ -663,6 +818,7 @@ function updateCropUI() {
   refs.cropBtn.classList.toggle("is-active", cropping);
   refs.cropBtn.setAttribute("aria-pressed", String(cropping));
   refs.cropActions.hidden = !cropping;
+  if (refs.deleteCurrentBtn) refs.deleteCurrentBtn.hidden = cropping;
   refs.paperHolder.style.touchAction = cropping ? "none" : "";
   refs.stageHint.textContent = cropping ? t("editor.tipCrop") : t("editor.tipIdle");
   refs.cropBtn.querySelector(".crop-label").textContent = cropping
@@ -770,6 +926,9 @@ async function addFiles(fileList) {
   let added = 0;
   let undetected = 0;
   const failed = [];
+
+  state.selectionMode = false;
+  state.selectedIds.clear();
 
   showBusy(
     t("import.reading"),
@@ -1399,6 +1558,8 @@ function clearAllPages() {
     actionLabel: t("confirm.clearAll"),
     onConfirm: async () => {
       closeInspectorPanel();
+      state.selectionMode = false;
+      state.selectedIds.clear();
       state.pages = [];
       state.activeId = null;
       state.cropMode = false;
@@ -1712,10 +1873,38 @@ function bindEvents() {
   });
 
   // Sidebar
+  refs.sidebarSelect.addEventListener("click", () => {
+    enterSelectionMode();
+    closeSidebar();
+  });
+  refs.sidebarToggle?.addEventListener("click", toggleSidebar);
+  refs.sidebarBackdrop?.addEventListener("click", closeSidebar);
+  refs.mobileAdd.addEventListener("click", () => {
+    refs.fileInput.click();
+    closeSidebar();
+  });
+  refs.mobileSelect.addEventListener("click", () => {
+    enterSelectionMode();
+    closeSidebar();
+  });
+  refs.mobileClear.addEventListener("click", clearAllPages);
+  refs.selectAllBtn.addEventListener("click", toggleSelectAllPages);
+  refs.deleteSelectedBtn.addEventListener("click", deleteSelectedPages);
+  refs.cancelSelectBtn.addEventListener("click", exitSelectionMode);
   refs.clearAll.addEventListener("click", clearAllPages);
   refs.pageList.addEventListener("click", (event) => {
     const card = event.target.closest(".page-card");
     if (!card) return;
+
+    if (state.selectionMode) {
+      event.preventDefault();
+      togglePageSelection(card.dataset.id);
+      return;
+    }
+
+    if (window.innerWidth <= 900) {
+      closeSidebar();
+    }
 
     const actionButton = event.target.closest("[data-menu-action]");
     if (actionButton) {
@@ -1737,9 +1926,21 @@ function bindEvents() {
     selectPage(card.dataset.id);
   });
 
+  refs.pageList.addEventListener("keydown", (event) => {
+    const card = event.target.closest(".page-card");
+    if (!card || event.target !== card) return;
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    if (state.selectionMode) togglePageSelection(card.dataset.id);
+    else selectPage(card.dataset.id);
+  });
+
   refs.pageList.addEventListener("scroll", closeCardMenus, { passive: true });
   window.addEventListener("resize", () => {
     closeCardMenus();
+    if (window.innerWidth > 900) {
+      closeSidebar();
+    }
     fitCanvas();
     updateCropOverlay();
   });
@@ -1825,6 +2026,10 @@ function bindEvents() {
     if (page) movePage(page.id, 1);
   });
   refs.deletePageBtn.addEventListener("click", () => {
+    const page = activePage();
+    if (page) deletePage(page.id);
+  });
+  refs.deleteCurrentBtn.addEventListener("click", () => {
     const page = activePage();
     if (page) deletePage(page.id);
   });
@@ -1940,8 +2145,16 @@ function handleShortcuts(event) {
       closeInspectorPanel();
       return;
     }
+    if (refs.sidebar?.classList.contains("is-open")) {
+      closeSidebar();
+      return;
+    }
     if (state.cropMode) {
       setCropMode(false);
+      return;
+    }
+    if (state.selectionMode) {
+      exitSelectionMode();
       return;
     }
     closeCardMenus();
