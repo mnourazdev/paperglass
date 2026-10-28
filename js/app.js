@@ -371,6 +371,7 @@ async function init() {
 
 function openSidebar() {
   if (!refs.sidebar) return;
+  refs.sidebar.classList.remove("is-peek");
   refs.sidebar.classList.add("is-open");
   refs.sidebarBackdrop?.removeAttribute("hidden");
   refs.sidebarToggle?.setAttribute("aria-expanded", "true");
@@ -380,6 +381,8 @@ function openSidebar() {
 function closeSidebar() {
   if (!refs.sidebar) return;
   refs.sidebar.classList.remove("is-open");
+  refs.sidebar.classList.remove("is-peek");
+  refs.sidebar.classList.remove("is-dragging");
   refs.sidebarBackdrop?.setAttribute("hidden", "");
   refs.sidebarToggle?.setAttribute("aria-expanded", "false");
   document.body.classList.remove("sidebar-open");
@@ -387,8 +390,12 @@ function closeSidebar() {
 
 function toggleSidebar() {
   if (!refs.sidebar) return;
-  if (refs.sidebar.classList.contains("is-open")) closeSidebar();
-  else openSidebar();
+  if (refs.sidebar.classList.contains("is-open")) {
+    closeSidebar();
+  } else {
+    refs.sidebar.classList.add("is-peek");
+    openSidebar();
+  }
 }
 
 function initTheme() {
@@ -1876,22 +1883,73 @@ function bindEvents() {
     if (event.dataTransfer.files.length) addFiles(event.dataTransfer.files);
   });
 
+  // Sidebar drag to raise
+  if (refs.sidebar) {
+    let startY = 0;
+    let currentY = 0;
+    let dragging = false;
+    let startTransform = 0;
+
+    const getHeight = () => refs.sidebar.getBoundingClientRect().height || 0;
+
+    const onStart = (event) => {
+      if (window.innerWidth > 900) return;
+      const target = event.target;
+      if (target && target.closest(".page-list, .page-card, button, a, input, select, textarea")) return;
+      dragging = true;
+      startY = event.touches ? event.touches[0].clientY : event.clientY;
+      startTransform = getHeight() * (refs.sidebar.classList.contains("is-open") ? 0 : (refs.sidebar.classList.contains("is-peek") ? 0.32 : 0.5));
+      refs.sidebar.classList.add("is-dragging");
+      refs.sidebar.classList.remove("is-peek");
+    };
+
+    const onMove = (event) => {
+      if (!dragging) return;
+      event.preventDefault();
+      currentY = event.touches ? event.touches[0].clientY : event.clientY;
+      const delta = startY - currentY;
+      if (delta > 40) {
+        if (!refs.sidebar.classList.contains("is-open")) {
+          openSidebar();
+        }
+      } else if (delta < -40) {
+        closeSidebar();
+      }
+    };
+
+    const onEnd = () => {
+      if (!dragging) return;
+      dragging = false;
+      refs.sidebar.classList.remove("is-dragging");
+      if (!refs.sidebar.classList.contains("is-open")) {
+        refs.sidebar.classList.add("is-peek");
+      }
+    };
+
+    refs.sidebar.addEventListener("touchstart", onStart, { passive: true });
+    refs.sidebar.addEventListener("touchmove", onMove, { passive: false });
+    refs.sidebar.addEventListener("touchend", onEnd);
+    refs.sidebar.addEventListener("mousedown", onStart);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onEnd);
+  }
+
   // Sidebar
-  refs.sidebarSelect.addEventListener("click", () => {
+  refs.sidebarSelect?.addEventListener("click", () => {
     enterSelectionMode();
-    closeSidebar();
+    if (typeof closeSidebar === "function") closeSidebar();
   });
   refs.sidebarToggle?.addEventListener("click", toggleSidebar);
   refs.sidebarBackdrop?.addEventListener("click", closeSidebar);
-  refs.mobileAdd.addEventListener("click", () => {
+  refs.mobileAdd?.addEventListener("click", () => {
     refs.fileInput.click();
-    closeSidebar();
+    if (typeof closeSidebar === "function") closeSidebar();
   });
-  refs.mobileSelect.addEventListener("click", () => {
+  refs.mobileSelect?.addEventListener("click", () => {
     enterSelectionMode();
-    closeSidebar();
+    if (typeof closeSidebar === "function") closeSidebar();
   });
-  refs.mobileClear.addEventListener("click", clearAllPages);
+  refs.mobileClear?.addEventListener("click", clearAllPages);
   refs.selectAllBtn.addEventListener("click", toggleSelectAllPages);
   refs.deleteSelectedBtn.addEventListener("click", deleteSelectedPages);
   refs.cancelSelectBtn.addEventListener("click", exitSelectionMode);
