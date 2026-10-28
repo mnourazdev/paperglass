@@ -234,6 +234,7 @@ async function init() {
   refs = {
     topbarMeta: $("#topbarMeta"),
     docMeta: $("#docMeta"),
+    brandHome: $("#brandHome"),
     langToggle: $("#langToggle"),
     langLabel: $("#langLabel"),
     themeToggle: $("#themeToggle"),
@@ -1800,6 +1801,9 @@ function closeInspectorPanel() {
 
 function bindEvents() {
   // Theme + language
+  refs.brandHome?.addEventListener("click", () => {
+    window.location.href = "./";
+  });
   refs.themeToggle.addEventListener("click", toggleTheme);
   refs.langToggle.addEventListener("click", toggleLocale);
 
