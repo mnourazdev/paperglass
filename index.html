@@ -8,12 +8,13 @@
   <meta name="color-scheme" content="light dark" />
   <meta name="theme-color" content="#f3f1ec" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Paperglass" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230f7a6c'/%3E%3Cpath d='M10 7h8l4 4v14H10z' fill='none' stroke='%23fff' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M18 7v4h4M13.5 17h5M13.5 21h3.5' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <link rel="icon" type="image/svg+xml" href="icons/app-icon.svg" sizes="any" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <script>
     (function () {
       try {
@@ -55,6 +56,7 @@
       <symbol id="i-check" viewBox="0 0 24 24"><path d="m4.5 12.5 5 5 10-11"/></symbol>
       <symbol id="i-select" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="m8 12 2.6 2.6L16 9"/></symbol>
       <symbol id="i-image" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.4"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.7-4.5a2 2 0 0 1 2.7 0l2.4 2.3c.5.5 1.2.5 1.7 0l1.5-1.4a2 2 0 0 1 2.7 0l1.8 1.7"/></symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6.5h16M4 12h16M4 17.5h16"/></symbol>
       <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3.5h7.5L19 9v11.5H6z"/><path d="M13.5 3.5V9H19"/><path d="M9.3 13h6.4M9.3 16.5h4.4"/></symbol>
       <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7.5h5M13 7.5h7M4 16.5h7M15 16.5h5"/><circle cx="11" cy="7.5" r="2.1"/><circle cx="13" cy="16.5" r="2.1"/></symbol>
       <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="7" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="7" r="1.2" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="9" cy="17" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="17" r="1.2" fill="currentColor" stroke="none"/></symbol>
@@ -75,15 +77,13 @@
   <div class="app" id="app">
     <header class="topbar">
       <div class="topbar-brand">
-        <button class="icon-btn sidebar-toggle only-mobile" id="sidebarToggle" type="button" data-i18n-aria="pages.title" aria-expanded="false">
-          <svg class="icon" aria-hidden="true"><use href="#i-sliders"/></svg>
+        <button class="icon-btn sidebar-toggle" id="sidebarToggle" type="button" data-i18n-aria="sidebar.toggle" data-i18n-title="sidebar.toggle" aria-controls="sidebar" aria-expanded="false" hidden>
+          <svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg>
         </button>
-        <button class="brand" id="brandHome" type="button" data-i18n-aria="a11y.home">
-          <span class="brand-mark">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3.5h7L18.5 8.5V20.5h-12z"/><path d="M13.5 3.5v5h5"/><path d="M9.5 12.5h5.5M9.5 16h3.8"/></svg>
-          </span>
-          <span class="brand-name">Paperglass</span>
-        </button>
+        <a class="brand" id="brandHome" href="./" data-i18n-aria="a11y.home">
+          <img class="brand-logo brand-logo-en" src="icons/logo-en.svg" alt="" />
+          <img class="brand-logo brand-logo-ar" src="icons/logo-ar.svg" alt="" />
+        </a>
       </div>
 
       <div class="topbar-center" id="topbarMeta">
@@ -104,7 +104,7 @@
           <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>
           <span data-i18n="actions.addPhotos">Add photos</span>
         </button>
-        <button class="btn btn-primary" id="exportBtn" type="button" disabled>
+        <button class="btn btn-primary" id="exportBtn" type="button" data-i18n-aria="actions.export" disabled>
           <span data-i18n="actions.export">Export</span>
           <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg>
         </button>
@@ -114,6 +114,9 @@
     <main class="workspace" id="workspace">
       <div class="sidebar-backdrop" id="sidebarBackdrop" hidden></div>
       <aside class="sidebar" id="sidebar" data-i18n-aria="a11y.scannedPages">
+        <button class="sidebar-drag-handle" id="sidebarDragHandle" type="button" data-i18n-aria="pages.title" aria-controls="sidebar" aria-expanded="false">
+          <span aria-hidden="true"></span>
+        </button>
         <div class="panel-head">
           <div>
             <h2 data-i18n="pages.title">Pages</h2>
@@ -170,7 +173,7 @@
         <div class="empty" id="emptyState">
           <div class="hero">
             <span class="eyebrow"><span class="eyebrow-dot"></span> <span data-i18n="hero.eyebrow">Private by design · on-device</span></span>
-            <h1 data-i18n-html="hero.title">Paper in.<br /><em>Scans out.</em></h1>
+            <h1 data-i18n-html="hero.title">Clean paper.<br /><em>Crystal clear.</em></h1>
             <p class="hero-sub" data-i18n="hero.sub">Photograph an invoice, receipt, or payment slip. Paperglass finds the page, squares it up, and wipes away shadows — ready to export as images or one tidy PDF.</p>
           </div>
 

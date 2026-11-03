@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Paperglass app icon">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="1" x2="1" y2="0">
+      <stop stop-color="#0874f5"/>
+      <stop offset="1" stop-color="#00d39b"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#eefaff"/>
+      <stop offset="1" stop-color="#8cdaf1"/>
+    </linearGradient>
+    <linearGradient id="fold" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#0874f5"/>
+      <stop offset="1" stop-color="#00d9ef"/>
+    </linearGradient>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#13a5d3"/>
+      <stop offset="1" stop-color="#0878bb"/>
+    </linearGradient>
+    <filter id="glow" x="-.3" y="-.5" width="1.6" height="2">
+      <feGaussianBlur stdDeviation="12"/>
+    </filter>
+    <filter id="shadow" x="-.3" y="-.3" width="1.6" height="1.7">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#062653" flood-opacity=".24"/>
+    </filter>
+  </defs>
+  <rect x="8" y="8" width="496" height="496" rx="94" fill="url(#bg)"/>
+  <g fill="none" stroke="#fff" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" opacity=".98">
+    <path d="M103 146v-32q0-24 24-24h55"/>
+    <path d="M330 90h55q24 0 24 24v32"/>
+    <path d="M103 366v32q0 24 24 24h55"/>
+    <path d="M330 422h55q24 0 24-24v-32"/>
+  </g>
+  <g filter="url(#shadow)">
+    <path d="M151 145q0-18 18-18h126l62 62v172q0 20-20 20H171q-20 0-20-20Z" fill="url(#paper)" stroke="#b9ecff" stroke-width="4"/>
+    <path d="M295 127v53q0 13 13 13h49Z" fill="url(#fold)"/>
+  </g>
+  <path d="M194 220h72M194 257h118" fill="none" stroke="url(#line)" stroke-width="19" stroke-linecap="round" opacity=".85"/>
+  <path d="M194 304h118M194 341h80" fill="none" stroke="#0ab1cb" stroke-width="19" stroke-linecap="round" opacity=".92"/>
+  <path d="M70 278h372" stroke="#00f1ff" stroke-width="27" opacity=".75" filter="url(#glow)"/>
+  <path d="M70 278h372" stroke="#b8ffff" stroke-width="7"/>
+</svg>

@@ -156,6 +156,7 @@ function currentDateName() {
 const state = {
   pages: [],
   activeId: null,
+  homeView: false,
   cropMode: false,
   selectionMode: false,
   selectedIds: new Set(),
@@ -243,6 +244,7 @@ async function init() {
     workspace: $("#workspace"),
     sidebar: $("#sidebar"),
     sidebarToggle: $("#sidebarToggle"),
+    sidebarDragHandle: $("#sidebarDragHandle"),
     sidebarBackdrop: $("#sidebarBackdrop"),
     pageList: $("#pageList"),
     sidebarAdd: $("#sidebarAdd"),
@@ -375,27 +377,39 @@ function openSidebar() {
   refs.sidebar.classList.add("is-open");
   refs.sidebarBackdrop?.removeAttribute("hidden");
   refs.sidebarToggle?.setAttribute("aria-expanded", "true");
+  refs.sidebarDragHandle?.setAttribute("aria-expanded", "true");
   document.body.classList.add("sidebar-open");
 }
 
 function closeSidebar() {
   if (!refs.sidebar) return;
+  if (refs.pageList) closeCardMenus();
   refs.sidebar.classList.remove("is-open");
   refs.sidebar.classList.remove("is-peek");
   refs.sidebar.classList.remove("is-dragging");
+  refs.sidebar.style.removeProperty("--sidebar-offset");
   refs.sidebarBackdrop?.setAttribute("hidden", "");
   refs.sidebarToggle?.setAttribute("aria-expanded", "false");
+  refs.sidebarDragHandle?.setAttribute("aria-expanded", "false");
   document.body.classList.remove("sidebar-open");
 }
 
 function toggleSidebar() {
   if (!refs.sidebar) return;
-  if (refs.sidebar.classList.contains("is-open")) {
-    closeSidebar();
-  } else {
-    refs.sidebar.classList.add("is-peek");
-    openSidebar();
+  if (state.homeView) {
+    state.homeView = false;
+    renderAll();
   }
+  if (refs.sidebar.classList.contains("is-open")) closeSidebar();
+  else openSidebar();
+}
+
+function syncSidebarToggle() {
+  if (!refs.sidebarToggle) return;
+  refs.sidebarToggle.setAttribute(
+    "aria-expanded",
+    String(refs.sidebar.classList.contains("is-open"))
+  );
 }
 
 function initTheme() {
@@ -447,16 +461,21 @@ function metaFor(page) {
 
 function renderAll() {
   const hasPages = state.pages.length > 0;
+  const showHome = !hasPages || state.homeView;
+  refs.sidebarToggle.hidden = !hasPages;
   if (!hasPages) {
     state.selectionMode = false;
     state.selectedIds.clear();
+    closeSidebar();
   }
   refs.workspace.classList.toggle("is-empty", !hasPages);
+  refs.workspace.classList.toggle("is-home", hasPages && state.homeView);
   refs.workspace.classList.toggle("is-selecting", hasPages && state.selectionMode);
-  refs.emptyState.hidden = hasPages;
-  refs.editor.hidden = !hasPages;
-  refs.exportBtn.disabled = !hasPages;
+  refs.emptyState.hidden = !showHome;
+  refs.editor.hidden = !hasPages || state.homeView;
+  refs.exportBtn.disabled = !hasPages || state.homeView;
   refs.mobileTools.hidden = state.selectionMode;
+  syncSidebarToggle();
   updateSelectionUI();
 
   if (!hasPages) {
@@ -464,6 +483,12 @@ function renderAll() {
     state.cropMode = false;
     refs.pageList.innerHTML = "";
     refs.pageCount.textContent = t("pages.none");
+    refs.docMeta.textContent = t("topbar.ready");
+    refs.stageHint.textContent = t("editor.tipEmpty");
+    return;
+  }
+
+  if (state.homeView) {
     refs.docMeta.textContent = t("topbar.ready");
     refs.stageHint.textContent = t("editor.tipEmpty");
     return;
@@ -930,6 +955,7 @@ async function addFiles(fileList) {
     return;
   }
 
+  state.homeView = false;
   const startedEmpty = state.pages.length === 0;
   let added = 0;
   let undetected = 0;
@@ -1808,8 +1834,16 @@ function closeInspectorPanel() {
 
 function bindEvents() {
   // Theme + language
-  refs.brandHome?.addEventListener("click", () => {
-    window.location.href = "./";
+  refs.brandHome?.addEventListener("click", (event) => {
+    if (!state.pages.length) return;
+    event.preventDefault();
+    state.homeView = true;
+    state.cropMode = false;
+    state.selectionMode = false;
+    state.selectedIds.clear();
+    closeSidebar();
+    closeInspectorPanel();
+    renderAll();
   });
   refs.themeToggle.addEventListener("click", toggleTheme);
   refs.langToggle.addEventListener("click", toggleLocale);
@@ -1883,55 +1917,67 @@ function bindEvents() {
     if (event.dataTransfer.files.length) addFiles(event.dataTransfer.files);
   });
 
-  // Sidebar drag to raise
-  if (refs.sidebar) {
-    let startY = 0;
-    let currentY = 0;
-    let dragging = false;
-    let startTransform = 0;
+  // The dedicated grab handle keeps drag gestures out of the scrollable page list.
+  if (refs.sidebar && refs.sidebarDragHandle) {
+    let pointerStartY = 0;
+    let offsetStart = 0;
+    let closedOffset = 0;
+    let activePointer = null;
+    let movedHandle = false;
 
-    const getHeight = () => refs.sidebar.getBoundingClientRect().height || 0;
-
-    const onStart = (event) => {
-      if (window.innerWidth > 900) return;
-      const target = event.target;
-      if (target && target.closest(".page-list, .page-card, button, a, input, select, textarea")) return;
-      dragging = true;
-      startY = event.touches ? event.touches[0].clientY : event.clientY;
-      startTransform = getHeight() * (refs.sidebar.classList.contains("is-open") ? 0 : (refs.sidebar.classList.contains("is-peek") ? 0.32 : 0.5));
-      refs.sidebar.classList.add("is-dragging");
-      refs.sidebar.classList.remove("is-peek");
-    };
-
-    const onMove = (event) => {
-      if (!dragging) return;
-      event.preventDefault();
-      currentY = event.touches ? event.touches[0].clientY : event.clientY;
-      const delta = startY - currentY;
-      if (delta > 40) {
-        if (!refs.sidebar.classList.contains("is-open")) {
-          openSidebar();
-        }
-      } else if (delta < -40) {
-        closeSidebar();
-      }
-    };
-
-    const onEnd = () => {
-      if (!dragging) return;
-      dragging = false;
+    const settle = (event) => {
+      if (activePointer === null || event.pointerId !== activePointer) return;
+      const current = Number.parseFloat(refs.sidebar.style.getPropertyValue("--sidebar-offset"));
+      const offset = Number.isFinite(current)
+        ? current
+        : refs.sidebar.classList.contains("is-open")
+          ? 0
+          : closedOffset;
+      activePointer = null;
       refs.sidebar.classList.remove("is-dragging");
-      if (!refs.sidebar.classList.contains("is-open")) {
+      refs.sidebar.style.removeProperty("--sidebar-offset");
+      if (offset > closedOffset * 0.45) {
+        openSidebar();
+      } else {
+        refs.sidebar.classList.remove("is-open");
         refs.sidebar.classList.add("is-peek");
+        refs.sidebarBackdrop?.setAttribute("hidden", "");
+        refs.sidebarToggle?.setAttribute("aria-expanded", "false");
+        refs.sidebarDragHandle.setAttribute("aria-expanded", "false");
+        document.body.classList.remove("sidebar-open");
       }
     };
 
-    refs.sidebar.addEventListener("touchstart", onStart, { passive: true });
-    refs.sidebar.addEventListener("touchmove", onMove, { passive: false });
-    refs.sidebar.addEventListener("touchend", onEnd);
-    refs.sidebar.addEventListener("mousedown", onStart);
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onEnd);
+    refs.sidebarDragHandle.addEventListener("pointerdown", (event) => {
+      if (window.innerWidth > 900 || !event.isPrimary) return;
+      event.preventDefault();
+      activePointer = event.pointerId;
+      pointerStartY = event.clientY;
+      movedHandle = false;
+      closedOffset = -window.innerHeight;
+      offsetStart = refs.sidebar.classList.contains("is-open") ? 0 : closedOffset;
+      refs.sidebar.classList.add("is-dragging");
+      refs.sidebarDragHandle.setPointerCapture(event.pointerId);
+    });
+    refs.sidebarDragHandle.addEventListener("pointermove", (event) => {
+      if (event.pointerId !== activePointer) return;
+      if (Math.abs(pointerStartY - event.clientY) > 6) movedHandle = true;
+      const offset = Math.min(
+        0,
+        Math.max(closedOffset, offsetStart + event.clientY - pointerStartY)
+      );
+      refs.sidebar.style.setProperty("--sidebar-offset", `${offset}px`);
+    });
+    refs.sidebarDragHandle.addEventListener("pointerup", settle);
+    refs.sidebarDragHandle.addEventListener("pointercancel", settle);
+    refs.sidebarDragHandle.addEventListener("click", () => {
+      if (movedHandle) {
+        movedHandle = false;
+        return;
+      }
+      if (refs.sidebar.classList.contains("is-open")) closeSidebar();
+      else openSidebar();
+    });
   }
 
   // Sidebar
@@ -1940,10 +1986,14 @@ function bindEvents() {
     if (typeof closeSidebar === "function") closeSidebar();
   });
   refs.sidebarToggle?.addEventListener("click", toggleSidebar);
+  window.matchMedia("(max-width: 900px)").addEventListener("change", (event) => {
+    if (!event.matches) closeSidebar();
+    syncSidebarToggle();
+  });
   refs.sidebarBackdrop?.addEventListener("click", closeSidebar);
   refs.mobileAdd?.addEventListener("click", () => {
-    refs.fileInput.click();
-    if (typeof closeSidebar === "function") closeSidebar();
+    closeSidebar();
+    openCamera();
   });
   refs.mobileSelect?.addEventListener("click", () => {
     enterSelectionMode();
@@ -1964,15 +2014,12 @@ function bindEvents() {
       return;
     }
 
-    if (window.innerWidth <= 900) {
-      closeSidebar();
-    }
-
     const actionButton = event.target.closest("[data-menu-action]");
     if (actionButton) {
       event.stopPropagation();
       const action = actionButton.dataset.menuAction;
       closeCardMenus();
+      if (window.innerWidth <= 900) closeSidebar();
       handleCardAction(action, card.dataset.id);
       return;
     }
@@ -1983,6 +2030,8 @@ function bindEvents() {
       toggleCardMenu(menuButton);
       return;
     }
+
+    if (window.innerWidth <= 900) closeSidebar();
 
     if (event.target.closest(".card-menu")) return;
     selectPage(card.dataset.id);
@@ -2162,7 +2211,7 @@ function bindEvents() {
   refs.captureBtn.addEventListener("click", capturePhoto);
   refs.cameraFallback.addEventListener("click", () => {
     closeCameraModal();
-    refs.cameraInput.click();
+    refs.fileInput.click();
   });
 
   // Keyboard

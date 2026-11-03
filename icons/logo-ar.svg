@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1310 400" role="img" aria-label="بيبر جلاس">
+  <defs>
+    <linearGradient id="frame" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#00b9ec"/>
+      <stop offset=".52" stop-color="#0874f5"/>
+      <stop offset="1" stop-color="#00d59a"/>
+    </linearGradient>
+    <linearGradient id="fold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0877f7"/>
+      <stop offset="1" stop-color="#00d4e6"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eaf7ff"/>
+      <stop offset="1" stop-color="#a6dff5"/>
+    </linearGradient>
+    <linearGradient id="beam" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#00e8ff" stop-opacity="0"/>
+      <stop offset=".24" stop-color="#00e8ff"/>
+      <stop offset=".5" stop-color="#fff"/>
+      <stop offset=".76" stop-color="#00e8ff"/>
+      <stop offset="1" stop-color="#00e8ff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="blueGreen" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#0874ed"/>
+      <stop offset=".55" stop-color="#00b6cb"/>
+      <stop offset="1" stop-color="#00c895"/>
+    </linearGradient>
+    <filter id="glow" x="-.3" y="-.5" width="1.6" height="2">
+      <feGaussianBlur stdDeviation="11"/>
+    </filter>
+  </defs>
+  <g transform="translate(870 18) scale(.96)">
+    <g fill="none" stroke="url(#frame)" stroke-width="21" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M48 89V58q0-27 27-27h71"/>
+      <path d="M244 31h70q27 0 27 27v31"/>
+      <path d="M48 294v27q0 27 27 27h71"/>
+      <path d="M244 348h70q27 0 27-27v-27"/>
+    </g>
+    <path d="M91 76q0-20 20-20h121l52 52v173q0 22-22 22H113q-22 0-22-22Z" fill="url(#paper)" stroke="#74c9f4" stroke-width="3"/>
+    <path d="M232 56v49q0 13 13 13h39Z" fill="url(#fold)"/>
+    <path d="M132 143h87M132 180h124" fill="none" stroke="#5794ca" stroke-width="17" stroke-linecap="round" opacity=".8"/>
+    <path d="M132 239h124M132 276h86" fill="none" stroke="#16adcf" stroke-width="17" stroke-linecap="round" opacity=".85"/>
+    <path d="M16 207h370" stroke="#00e9ff" stroke-width="25" opacity=".62" filter="url(#glow)"/>
+    <path d="M16 207h370" stroke="url(#beam)" stroke-width="6"/>
+  </g>
+  <text x="865" y="270" text-anchor="start" direction="rtl" unicode-bidi="bidi-override" font-family="Arial, Tahoma, sans-serif" font-size="185" font-weight="700" fill="url(#blueGreen)" textLength="325" lengthAdjust="spacingAndGlyphs">بيبر</text>
+  <text x="520" y="270" text-anchor="start" direction="rtl" unicode-bidi="bidi-override" font-family="Arial, Tahoma, sans-serif" font-size="185" font-weight="700" fill="#071a36" textLength="470" lengthAdjust="spacingAndGlyphs">جلاس</text>
+</svg>

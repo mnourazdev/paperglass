@@ -89,6 +89,7 @@ const EN = {
   "actions.delete": "Delete",
 
   "pages.title": "Pages",
+  "sidebar.toggle": "Toggle pages sidebar",
   "pages.none": "No pages yet",
   "pages.count": (v) => enPages(v.count),
   "page.summary": (v) => `${enPages(v.count)} · ${v.size}`,
@@ -103,7 +104,7 @@ const EN = {
   "save.error": "Not saved",
 
   "hero.eyebrow": "Private by design · on-device",
-  "hero.title": "Paper in.<br /><em>Scans out.</em>",
+  "hero.title": "Clean paper.<br /><em>Crystal clear.</em>",
   "hero.sub":
     "Photograph an invoice, receipt, or payment slip. Paperglass finds the page, squares it up, and wipes away shadows — ready to export as images or one tidy PDF.",
   "drop.title": "Drop your photos here",
@@ -228,7 +229,7 @@ const EN = {
   "camera.sub": "Fill the frame with the page and keep the light even.",
   "camera.error":
     "Camera unavailable. You can still choose a photo from your device.",
-  "camera.chooseFile": "Choose a file",
+  "camera.chooseFile": "Choose from gallery",
   "camera.capture": "Capture",
   "camera.unavailable":
     "Camera unavailable. Check browser permission, or choose a photo from your device.",
@@ -294,6 +295,7 @@ const AR = {
   "actions.delete": "حذف",
 
   "pages.title": "الصفحات",
+  "sidebar.toggle": "إظهار أو إخفاء الشريط الجانبي للصفحات",
   "pages.none": "لا توجد صفحات بعد",
   "pages.count": (v) => arPages(v.count),
   "page.summary": (v) => `${arPages(v.count)} · ${v.size}`,
@@ -308,7 +310,7 @@ const AR = {
   "save.error": "لم يُحفظ",
 
   "hero.eyebrow": "خاص بحكم التصميم · على الجهاز",
-  "hero.title": "ورق يدخل.<br /><em>مسوحات تخرج.</em>",
+  "hero.title": "ورق نظيف.<br /><em>بصفاء الزجاج.</em>",
   "hero.sub":
     "صوّر فاتورة أو إيصالًا أو قسيمة دفع. يعثر Paperglass على الصفحة ويقوّمها ويزيل الظلال — جاهزة للتصدير كصور أو ملف PDF واحد مرتب.",
   "drop.title": "أفلت صورك هنا",
@@ -445,7 +447,7 @@ const AR = {
   "camera.title": "التقط صورة",
   "camera.sub": "املأ الإطار بالصفحة وحافظ على إضاءة متساوية.",
   "camera.error": "الكاميرا غير متاحة. يمكنك مع ذلك اختيار صورة من جهازك.",
-  "camera.chooseFile": "اختر ملفًا",
+  "camera.chooseFile": "اختر من المعرض",
   "camera.capture": "التقاط",
   "camera.unavailable":
     "الكاميرا غير متاحة. تحقق من إذن المتصفح، أو اختر صورة من جهازك.",

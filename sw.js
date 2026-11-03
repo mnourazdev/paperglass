@@ -6,7 +6,7 @@
  * scripts and styles use stale-while-revalidate.
  */
 
-const CACHE_VERSION = "paperglass-v2";
+const CACHE_VERSION = "paperglass-v6";
 const SHELL = [
   "./",
   "./index.html",
@@ -19,6 +19,9 @@ const SHELL = [
   "./js/i18n.js",
   "./manifest.webmanifest",
   "./icons/icon.svg",
+  "./icons/app-icon.svg",
+  "./icons/logo-en.svg",
+  "./icons/logo-ar.svg",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/maskable-192.png",
