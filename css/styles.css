@@ -2346,6 +2346,10 @@ body.sidebar-open {
   background: #0a0f0d;
 }
 
+.camera-stage.is-rotated #cameraVideo {
+  transform: translate(-50%, -50%) rotate(var(--camera-rotation));
+}
+
 .camera-guide {
   position: absolute;
   inset: 9%;

@@ -1648,10 +1648,15 @@ function updateCameraOrientation() {
   const stage = refs.cameraStage;
   if (!state.cameraStream || !video?.videoWidth || !video?.videoHeight || !stage) return;
 
-  // Keep the preview and captured pixels in the camera stream's native
-  // orientation. Rotating the video element/canvas can turn upright phone
-  // camera streams sideways on devices that already apply sensor rotation.
-  const aspectRatio = video.videoWidth / video.videoHeight;
+  const portrait = window.matchMedia("(orientation: portrait)").matches;
+  const sourcePortrait = video.videoHeight > video.videoWidth;
+  // Android camera streams may stay in sensor (landscape) orientation while
+  // the phone is held upright. Rotate only when the stream and screen disagree.
+  // Portrait streams need a counter-clockwise turn to match the phone camera view.
+  const rotation = portrait === sourcePortrait ? 0 : portrait ? -90 : 90;
+  const outputWidth = rotation ? video.videoHeight : video.videoWidth;
+  const outputHeight = rotation ? video.videoWidth : video.videoHeight;
+  const aspectRatio = outputWidth / outputHeight;
   const stageStyle = getComputedStyle(stage);
   const marginLeft = Number.parseFloat(stageStyle.marginLeft) || 0;
   const marginRight = Number.parseFloat(stageStyle.marginRight) || 0;
@@ -1662,7 +1667,17 @@ function updateCameraOrientation() {
 
   stage.style.width = `${width}px`;
   stage.style.marginInline = "auto";
-  stage.style.aspectRatio = `${video.videoWidth} / ${video.videoHeight}`;
+  stage.style.aspectRatio = `${outputWidth} / ${outputHeight}`;
+  stage.classList.toggle("is-rotated", rotation !== 0);
+  stage.style.setProperty("--camera-rotation", `${rotation}deg`);
+  video.dataset.captureRotation = String(rotation);
+  if (rotation) {
+    video.style.width = `${stage.clientHeight}px`;
+    video.style.height = `${stage.clientWidth}px`;
+  } else {
+    video.style.width = "100%";
+    video.style.height = "100%";
+  }
 }
 
 function stopCamera() {
@@ -1674,8 +1689,11 @@ function stopCamera() {
   if (refs.cameraVideo) {
     refs.cameraVideo.style.removeProperty("width");
     refs.cameraVideo.style.removeProperty("height");
+    refs.cameraVideo.dataset.captureRotation = "0";
   }
   if (refs.cameraStage) {
+    refs.cameraStage.classList.remove("is-rotated");
+    refs.cameraStage.style.removeProperty("--camera-rotation");
     refs.cameraStage.style.removeProperty("width");
     refs.cameraStage.style.removeProperty("margin-inline");
     refs.cameraStage.style.removeProperty("aspect-ratio");
@@ -1696,10 +1714,17 @@ async function capturePhoto() {
   }
 
   const canvas = document.createElement("canvas");
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+  const rotation = Number(video.dataset.captureRotation || 0);
+  canvas.width = rotation ? video.videoHeight : video.videoWidth;
+  canvas.height = rotation ? video.videoWidth : video.videoHeight;
   const ctx = canvas.getContext("2d");
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  if (rotation) {
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2);
+  } else {
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  }
 
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.94));
   closeCameraModal();
