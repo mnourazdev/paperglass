@@ -2326,6 +2326,7 @@ body.sidebar-open {
 .camera-stage {
   position: relative;
   margin: 0 24px;
+  max-width: calc(100% - 48px);
   border-radius: 14px;
   overflow: hidden;
   background: #0a0f0d;
@@ -2335,10 +2336,18 @@ body.sidebar-open {
 }
 
 #cameraVideo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  transform: translate(-50%, -50%);
   background: #0a0f0d;
+}
+
+.camera-stage.is-rotated #cameraVideo {
+  transform: translate(-50%, -50%) rotate(90deg);
 }
 
 .camera-guide {
@@ -2584,7 +2593,7 @@ body.sidebar-open {
     right: 0;
     bottom: 0;
     z-index: 60;
-    width: min(340px, 92vw);
+    width: min(320px, 88vw);
     border-left: 1px solid var(--border);
     box-shadow: var(--shadow-lg);
     transform: translateX(102%);
@@ -2595,6 +2604,12 @@ body.sidebar-open {
   .inspector.is-open {
     transform: translateX(0);
     visibility: visible;
+  }
+
+  .inspector.is-previewing-adjustment,
+  .inspector-scrim.is-previewing-adjustment {
+    opacity: 0;
+    transition: none;
   }
 
   .inspector-scrim {
@@ -3070,7 +3085,8 @@ body.sidebar-open {
   }
 
   .sidebar {
-    height: calc(86px + env(safe-area-inset-bottom));
+    height: min(95dvh, 820px);
+    max-height: calc(100dvh - var(--topbar-h) - 6px);
   }
 
   .thumb-wrap {

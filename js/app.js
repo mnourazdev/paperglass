@@ -330,6 +330,7 @@ async function init() {
     confirmMessage: $("#confirmMessage"),
     confirmAction: $("#confirmAction"),
     cameraModal: $("#cameraModal"),
+    cameraStage: $(".camera-stage"),
     cameraVideo: $("#cameraVideo"),
     cameraError: $("#cameraError"),
     captureBtn: $("#captureBtn"),
@@ -1620,16 +1621,19 @@ async function openCamera() {
   refs.captureBtn.disabled = true;
 
   try {
+    const portrait = window.matchMedia("(orientation: portrait)").matches;
     state.cameraStream = await navigator.mediaDevices.getUserMedia({
       video: {
         facingMode: { ideal: "environment" },
-        width: { ideal: 1920 },
-        height: { ideal: 1440 },
+        width: { ideal: portrait ? 1440 : 1920 },
+        height: { ideal: portrait ? 1920 : 1440 },
+        aspectRatio: { ideal: portrait ? 3 / 4 : 4 / 3 },
       },
       audio: false,
     });
     refs.cameraVideo.srcObject = state.cameraStream;
     await refs.cameraVideo.play().catch(() => {});
+    updateCameraOrientation();
     refs.captureBtn.disabled = false;
   } catch (error) {
     console.warn("Paperglass: camera unavailable", error);
@@ -1639,12 +1643,57 @@ async function openCamera() {
   }
 }
 
+function updateCameraOrientation() {
+  const video = refs.cameraVideo;
+  const stage = refs.cameraStage;
+  if (!state.cameraStream || !video?.videoWidth || !video?.videoHeight || !stage) return;
+
+  const portrait = window.matchMedia("(orientation: portrait)").matches;
+  const sourcePortrait = video.videoHeight > video.videoWidth;
+  const rotation = portrait === sourcePortrait ? 0 : 90;
+  const outputWidth = rotation ? video.videoHeight : video.videoWidth;
+  const outputHeight = rotation ? video.videoWidth : video.videoHeight;
+  const aspectRatio = outputWidth / outputHeight;
+  const stageStyle = getComputedStyle(stage);
+  const marginLeft = Number.parseFloat(stageStyle.marginLeft) || 0;
+  const marginRight = Number.parseFloat(stageStyle.marginRight) || 0;
+  const margins = marginLeft + marginRight;
+  const availableWidth = Math.max(1, stage.parentElement.clientWidth - margins);
+  const maxHeight = Math.min(window.innerHeight * 0.58, 520);
+  const width = Math.min(availableWidth, maxHeight * aspectRatio);
+
+  stage.classList.toggle("is-rotated", rotation !== 0);
+  stage.style.width = `${width}px`;
+  stage.style.marginInline = "auto";
+  stage.style.aspectRatio = `${outputWidth} / ${outputHeight}`;
+  video.dataset.captureRotation = String(rotation);
+
+  if (rotation) {
+    video.style.width = `${stage.clientHeight}px`;
+    video.style.height = `${stage.clientWidth}px`;
+  } else {
+    video.style.width = "100%";
+    video.style.height = "100%";
+  }
+}
+
 function stopCamera() {
   if (state.cameraStream) {
     state.cameraStream.getTracks().forEach((track) => track.stop());
     state.cameraStream = null;
   }
   if (refs.cameraVideo) refs.cameraVideo.srcObject = null;
+  if (refs.cameraVideo) {
+    refs.cameraVideo.style.removeProperty("width");
+    refs.cameraVideo.style.removeProperty("height");
+    refs.cameraVideo.dataset.captureRotation = "0";
+  }
+  if (refs.cameraStage) {
+    refs.cameraStage.classList.remove("is-rotated");
+    refs.cameraStage.style.removeProperty("width");
+    refs.cameraStage.style.removeProperty("margin-inline");
+    refs.cameraStage.style.removeProperty("aspect-ratio");
+  }
 }
 
 function closeCameraModal() {
@@ -1661,10 +1710,17 @@ async function capturePhoto() {
   }
 
   const canvas = document.createElement("canvas");
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+  const rotation = Number(video.dataset.captureRotation || 0);
+  canvas.width = rotation ? video.videoHeight : video.videoWidth;
+  canvas.height = rotation ? video.videoWidth : video.videoHeight;
   const ctx = canvas.getContext("2d");
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  if (rotation) {
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2);
+  } else {
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  }
 
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.94));
   closeCameraModal();
@@ -1825,7 +1881,20 @@ function openInspectorPanel() {
 
 function closeInspectorPanel() {
   refs.inspector.classList.remove("is-open");
+  refs.inspector.classList.remove("is-previewing-adjustment");
   refs.inspectorScrim.hidden = true;
+  refs.inspectorScrim.classList.remove("is-previewing-adjustment");
+}
+
+function beginAdjustmentPreview() {
+  if (!refs.inspector.classList.contains("is-open")) return;
+  refs.inspector.classList.add("is-previewing-adjustment");
+  refs.inspectorScrim.classList.add("is-previewing-adjustment");
+}
+
+function endAdjustmentPreview() {
+  refs.inspector.classList.remove("is-previewing-adjustment");
+  refs.inspectorScrim.classList.remove("is-previewing-adjustment");
 }
 
 /* ------------------------------------------------------------------ */
@@ -2054,7 +2123,10 @@ function bindEvents() {
     }
     fitCanvas();
     updateCropOverlay();
+    updateCameraOrientation();
   });
+  window.addEventListener("orientationchange", updateCameraOrientation);
+  window.screen.orientation?.addEventListener("change", updateCameraOrientation);
 
   // Reordering
   refs.pageList.addEventListener("dragstart", (event) => {
@@ -2120,6 +2192,12 @@ function bindEvents() {
   window.addEventListener("pointermove", moveCorner);
   window.addEventListener("pointerup", endCornerDrag);
   window.addEventListener("pointercancel", endCornerDrag);
+  window.addEventListener("pointerup", endAdjustmentPreview);
+  window.addEventListener("pointercancel", endAdjustmentPreview);
+  window.addEventListener("blur", endAdjustmentPreview);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) endAdjustmentPreview();
+  });
 
   // Inspector
   refs.presetGrid.addEventListener("click", (event) => {
@@ -2151,6 +2229,10 @@ function bindEvents() {
     [refs.cleanup, "cleanup", refs.cleanupOut],
   ];
   sliders.forEach(([input, property, output]) => {
+    input.addEventListener("pointerdown", (event) => {
+      if (event.button === 0) beginAdjustmentPreview();
+    });
+    input.addEventListener("lostpointercapture", endAdjustmentPreview);
     input.addEventListener("input", () => {
       const page = activePage();
       if (!page) return;
